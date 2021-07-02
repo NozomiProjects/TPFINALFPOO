@@ -1,0 +1,186 @@
+/** Se importa la libreía minim para reproducir archivos de audio*/
+import ddf.minim.*;
+/** Declaración de objetos y sus tipos*/
+Minim minim;
+AudioPlayer menuSong;
+Minim minim2;
+AudioPlayer level1;
+Minim minim3;
+AudioPlayer disparoSong;
+Minim minim4;
+AudioPlayer gameoverSong;
+AudioPlayer boom;
+Fondo fondo;
+Nave nave;
+Barra barra;
+Ventana menu;
+
+/** Declaración de los arreglos de tipo Opcion y Enemigo*/
+Opcion [] opciones;
+Enemigo[] enemigos;
+
+/** Declaración del arrayList de tipo Bala*/
+ArrayList<Bala> balas;
+/**Declaración de la variable num*/
+int num;
+
+
+/**Se ejecuta al inicio por única vez, para configuración inicial*/
+void setup() {
+  /**SETUP GENERAL*/
+  /** Disminuye la cantidad de fotogramas que se verán por segundo*/
+  frameRate(20);  
+  /** Se determina un tamaño del lienzo*/
+  size(1200, 880);
+  
+  /**  se generan objetos tipo "Minim" **/
+  minim= new Minim(this);  
+  minim2= new Minim(this);
+  minim3=new Minim(this);
+  minim4=new Minim(this);
+  /** Se carga el audio*/
+  level1=minim.loadFile("Operation1.mp3");
+  menuSong= minim.loadFile("Menu.mp3");
+  gameoverSong=minim.loadFile("GameOver.mp3");
+  
+  /** Se crean los objetos según su tipo*/
+  fondo=new Fondo();  
+  nave=new Nave(); 
+  barra= new Barra();
+  menu=new Ventana();
+  
+  /** Se crea el arreglo con 3 objetos y se le asigna a cada uno, un tipo*/
+  enemigos =new Enemigo [3];
+  enemigos[0] = new Enemigo1();
+  enemigos[1] = new Enemigo2();
+  enemigos[2] = new Enemigo3();
+  
+  /** Se crea el arrayList balas*/
+  balas=new ArrayList();
+  
+  /** Se inicializa la variable num*/
+  num=0;
+  /** Se invoca al método crearOpciones para generar las opciones del menú*/
+  menu.crearOpciones(); 
+}
+
+/** Redibuja el lienzo constantemente y ejecuta su contenido*/
+void draw() {
+  /** Inicia la música de fondo del menú*/
+  menuSong.play();
+  
+ /** Se crea una condicional switch tomando como parámetro num que al principio es igual a cero*/
+  switch(num) {
+    
+ /** Si num es igual a 0, visualiza el menú*/   
+  case 0:
+    menu.displayMenu();
+    break;
+    
+  /** Si num es igual a 1, comienza el juego*/     
+  case 1:
+  /** Pausa la música de fondo del menú*/  
+    menuSong.pause();
+  /** Inicia la música de fondo del juego*/  
+    level1.play();
+  /** Quita el cursor dentro del juego*/   
+    noCursor();
+  /** Dibuja el fondo en movimiento del juego*/     
+    fondo.display();
+  /** Dibuja el score, el highscore y el texto del juego*/  
+    barra.generarHighscore();
+  /** Sube el nivel del juego*/  
+    barra.levelUp();
+    
+  /** Se recorre el arreglo enemigos*/    
+    for(int i=0; i <enemigos.length;i++){
+      /** Se crea la variable e del tipo Enemigo como un arreglo*/
+      Enemigo e = enemigos[i];
+      /** Si el arreglo no tiene nulos, invoca métodos*/
+      if (enemigos[i] != null) {
+          /** Se dibujan los enemigos en el lienzo*/
+          e.display();
+          /** Mueve a los enemigos en el lienzo*/          
+          e.move();
+          /** Reinicia la posicion de los enemigos*/
+          e.reiniciar();
+          /** Detecta la colisión de los enemigos con las balas*/
+          e.colisionar(balas);
+          /** Reinicia la posicion de los enemigos cuando colisiona con la nave*/          
+          e.reiniciarConNave(nave);
+          /** Reinicia la posicion de los enemigos*/
+          e.subirNivel1(barra);          
+        }
+    }
+    
+    /** Suma el score de la barra cuando hay colisión entre balas y enemigos*/
+    barra.sumarScore1();
+    barra.sumarScore2();
+    barra.sumarScore3();
+    /** Quita una vida por cada colisión entre enemigos y la nave*/   
+    barra.quitarVidaChoque1 ();
+    barra.quitarVidaChoque2 ();
+    barra.quitarVidaChoque3 ();
+    /** Quita una vida si los enemigos pasan por detrás de la nave*/ 
+    barra.quitarVida1 ();
+    barra.quitarVida2 ();
+    barra.quitarVida3 ();
+    /** Mueve la nave con el mouse de forma vertical*/
+    nave.move();
+    break;
+   
+   /** Si num es igual a 2, muestra los controles*/     
+   case 2:
+      /** Llama al método para mostrar los controles*/
+      menu.mostrarControles();
+      /** Muestra la opcion "BACK" dentro de controles*/
+      opciones[3].display();
+      /** Si se presiona sobre la opción "BACK" vuelve al menú inicial*/   
+      if (opciones[3].getMouse()) {
+        /** Se le asigna el valor 0 para volver al menú inicial*/
+        num=0;
+      }  
+      break;
+      
+   /** Si num es igual a 3, el juego termina*/ 
+    case 3:
+     /** Inicia la música de juego terminado*/
+     gameoverSong.play();
+     /** Pausa la música de fondo del menú*/
+     menuSong.pause();
+     /** Pausa la música de fondo del juego*/
+     level1.pause();
+     /** Muestra la imagen de Game Over*/
+     barra.mostrarGameOver();
+     /** Detiene la ejecución constante del código dentro de draw  */
+     noLoop();
+     break;
+    }
+
+  /** Se invoca al método disparar de la clase Nave */
+  nave.disparar(balas);
+  /** Se eliminan los bordes de las balas */ 
+  noStroke();
+  /** Recorre el ArrayList balas*/ 
+  for (int i=0; i<balas.size(); i++) {
+    /** Dibuja las balas*/ 
+    balas.get(i).display();
+    /** Mueve las balas*/ 
+    balas.get(i).mover();
+  }
+  
+  
+   
+  /** Recorre el ArrayList balas y las elimina en caso de que pasen el lienzo*/ 
+  for(int j= balas.size() -1; j >=0 ;j--){
+    if(balas.get(j).verificarAlcanceX()){
+      balas.remove(j);
+    }
+  }
+  
+  /** Recorre el arreglo opciones*/ 
+  for (int i=0; i<opciones.length; i++) {
+    /** Evita que el botón del mouse quede activo al presionar en cualquier parde del lienzo*/ 
+    opciones[i].deshabilitarMouse();
+  }
+}
